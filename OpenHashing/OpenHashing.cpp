@@ -13,74 +13,43 @@ typedef struct Player{
     char name[100];
     char classPlayer[100];
     float points;
-	char status; // F = free, O = occupied, R = removed
+	char status; // F = Livre, O = ocupado, R = removido
+	int hashValue;
+	int vectorPosition;
+
 }Player;
 
-//Signatures
+//Function Signatures
 int hashFunction(int id);
-void showHash(Player table[]);
+void showPlayers(Player table[]);
 void insertPlayer(Player table[], int position, Player player);
 int searchPlayer(Player table[], int id);
 void deletePlayer(Player table[], int id);
 Player* readFile(Player table[], FILE *fp);
 Player* loadFactor(Player table[]);
+void applicationMenu(Player table[], FILE *fp);
 
-//Global Variables
+//Global Variable
 int dimension = SIZE;
 
 int _tmain(int argc, _TCHAR* argv[])
 {
 	Player* table = (Player*) malloc (sizeof(Player)*SIZE);
 	Player player;
-    int selection, position;
-    int id, i;
+    int i;
 	FILE* fp;
 	
-	fp = fopen("AlunosIFE.txt", "rt");
+	fp = fopen("documentoTeste.txt", "rt");
 
-    //inicialização da table
+    //table start
     for(i = 0; i < dimension; i++)
         table[i].status='F';
 
-    do{
-        printf("\n1 - Carregar Arquivo\n");
-        printf("2 - Mostrar TABELA HASH\n");
-		printf("3 - Pesquisar Jogador\n");
-        printf("4 - Excluir Jogador\n");
-        printf("5 - Sair\n");
-        printf("=> "); scanf("%d", &selection);
+	applicationMenu(table, fp);
 
-        if(selection < 1 || selection > 5)
-            printf("\nOPCAO INVALIDA!!\n");
-        else{
-            switch(selection){
-                case 1:
-					table = readFile(table, fp);
-                    break;
+    
 
-                case 2:
-                    showHash(table);
-                    break;
-
-				case 3:
-					printf("\nDigite o id: ");scanf("%d", &id);
-					position = searchPlayer(table, id);
-					if(position == dimension) 
-						printf("JOGADOR NAO ENCONTRADO!!");
-					else 
-						printf("NOME: %s", table[position].name);
-					break;
-
-                case 4:
-                    printf("\nDigite o id: "); scanf("%d", &id);
-                    deletePlayer(table, id);
-					break;
-            }
-        }
-
-    }while(selection != 5);
-
-	system("PAUSE");
+	//system("PAUSE");
 	return 0;
 }
 
@@ -88,24 +57,29 @@ int hashFunction(int id){
     return id % dimension;
 }
 
-void showHash(Player table[]){
+void showPlayers(Player table[]){
     int i = 0;
 	for (i; i < dimension; i++){
 		if(table[i].status == 'O')
-			printf("Entrada %s\n", table[i].name);
+			printf("%s - Posicao Hash %d - Posicao Vetor - %d\n", table[i].name, table[i].hashValue, table[i].vectorPosition);
 	}
 }
 
 void insertPlayer(Player table[], int position, Player player){
-    int i = 0;
-    while(i < dimension && table[(position+i)%dimension].status != 'F' && table[(position+i)%dimension].status != 'R')
+    int i = 0, vectorPosition = position; 
+
+	while(i < dimension && table[(position+i)%dimension].status != 'F' && table[(position+i)%dimension].status != 'R'){
             i++;
+			vectorPosition = (position+i)%dimension; //getting player position in vector
+	}
 
     if(i < dimension){
 		table[(position+i)%dimension].id = player.id;
 		strcpy(table[(position+i)%dimension].name, player.name); 
 		strcpy(table[(position+i)%dimension].classPlayer, player.classPlayer); 
 		table[(position+i)%dimension].points = player.points;
+		table[(position+i)%dimension].hashValue = position;
+		table[(position+i)%dimension].vectorPosition = vectorPosition;
         table[(position+i)%dimension].status = 'O';
     }
     else
@@ -136,7 +110,6 @@ void deletePlayer(Player table[], int id){
         printf("ELEMENTO NAO ESTA PRESENTE");
 }
 
-//FINALIZAR IMPLEMENTAÇÃO
 Player* readFile(Player table[], FILE *fp){
 	char nameAndClass[200];
 	
@@ -175,7 +148,7 @@ Player* readFile(Player table[], FILE *fp){
 
 		nameAndClass[y] = '\0';
 		
-		//separando o nome e a classe e colocando nos seus respectivos vetores
+		//separating the name and class putting in their respective vectors
 		int z = 0;
 		int x = 0;
 		while(1){
@@ -222,9 +195,9 @@ Player* loadFactor(Player table[]){
 	int position = 0, i, j;
 	Player* helper = (Player*) malloc( sizeof(Player) * (dimension*2) );	
 
-	dimension = ( dimension * 2 ); //redimensionando o valor de dimension relativo ao tamanho da HashTable;
+	dimension = ( dimension * 2 ); //revalorando a variavel dimension relativo ao tamanho da HashTable;
 
-	//inicialização da table
+	//helper start
 	for(i = 0; i < dimension; i++)
 		helper[i].status='F';
 	
@@ -238,9 +211,48 @@ Player* loadFactor(Player table[]){
 	return helper;
 }
 
+void applicationMenu(Player table[], FILE *fp){
+	int selected = 0, position = 0, id = 0;
 
+	do{
+        printf("\n1 - Carregar Arquivo\n");
+        printf("2 - Exibir Jogadores\n");
+		printf("3 - Pesquisar Jogador\n");
+        printf("4 - Excluir Jogador\n");
+        printf("5 - Sair\n");
+        printf("=> "); scanf("%d", &selected);
 
-/*para o loadFactor, vou criar dinamicamente outro vetor e inserir os dados do outro neste*/
+        if(selected < 1 || selected > 5)
+            printf("\nOPCAO INVALIDA!!\n");
+        else{
+            switch(selected){
+                case 1:
+					table = readFile(table, fp);
+					printf("ARQUIVO CARREGADO");
+                    break;
+
+                case 2:
+                    showPlayers(table);
+                    break;
+
+				case 3:
+					printf("\nDigite o id: ");scanf("%d", &id);
+					position = searchPlayer(table, id);
+					if(position == dimension) 
+						printf("JOGADOR NAO ENCONTRADO!!");
+					else 
+						printf("NOME: %s", table[position].name);
+					break;
+
+                case 4:
+                    printf("\nDigite o id: "); scanf("%d", &id);
+                    deletePlayer(table, id);
+					break;
+            }
+        }
+
+    }while(selected != 5);
+}
 	
 
 
